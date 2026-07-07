@@ -1,4 +1,4 @@
--- LEMONHUB V6.5 | REVERTED & UPGRADED
+-- LEMONHUB V6.6 | REVERTED & UPGRADED (HIGHLIGHT ESP FIXED)
 local function safeLoad()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
@@ -13,7 +13,7 @@ local function safeLoad()
     local function notify(text)
         pcall(function()
             StarterGui:SetCore("SendNotification", {
-                Title = "LEMONHUB V6.5",
+                Title = "LEMONHUB V6.6",
                 Text = text,
                 Duration = 3
             })
@@ -82,7 +82,7 @@ local function safeLoad()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(0, 300, 1, 0)
     Title.Position = UDim2.new(0, 15, 0, 0)
-    Title.Text = "MM2 | LEMONHUB V6.5"
+    Title.Text = "MM2 | LEMONHUB V6.6"
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.Font = Enum.Font.SourceSansBold; Title.TextSize = 18
     Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; Title.Parent = Header
@@ -250,7 +250,6 @@ local function safeLoad()
 
     createGroup(CombatPage, "Уничтожение & Стрельба")
 
-    -- Кастомная система Авто-стрельбы (Shoot)
     local function fireAtMurderer()
         local gun = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Gun")
         local m = getMurderer()
@@ -263,10 +262,8 @@ local function safeLoad()
         end
     end
 
-    -- Кнопка смены бинда
     local BindBtn = addButton(CombatPage, "Бинд Shoot: " .. currentBind.Name, function()
         bindingMode = true
-        local BindBtn = CombatPage:FindFirstChild("Бинд Shoot: " .. currentBind.Name) or nil
     end)
 
     UIS.InputBegan:Connect(function(input, gpe)
@@ -282,7 +279,6 @@ local function safeLoad()
         end
     end)
 
-    -- Мобильная кнопка Shoot для телефонов
     if UIS.TouchEnabled then
         local MobileShootBtn = Instance.new("TextButton")
         MobileShootBtn.Size = UDim2.new(0, 65, 0, 65)
@@ -294,7 +290,6 @@ local function safeLoad()
         MobileShootBtn.Parent = MainGui
         round(MobileShootBtn, 32)
         
-        -- Сделать кнопку перетаскиваемой на экране мобилки
         local mDrag, mStart, mBarStart
         MobileShootBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then mDrag = true mStart = i.Position mBarStart = MobileShootBtn.Position end end)
         MobileShootBtn.InputChanged:Connect(function(i) if mDrag and i.UserInputType == Enum.UserInputType.Touch then local d = i.Position - mStart MobileShootBtn.Position = UDim2.new(mBarStart.X.Scale, mBarStart.X.Offset + d.X, mBarStart.Y.Scale, mBarStart.Y.Offset + d.Y) end end)
@@ -394,72 +389,76 @@ local function safeLoad()
     end)
 
     ---------------------------------------------------------
-    -- ВКЛАДКА VISUAL (ПРОШЛОЕ НОРМАЛЬНОЕ ESP КВАДРАТАМИ)
+    -- ВКЛАДКА VISUAL (ПРАВИЛЬНЫЙ ИСПРАВЛЕННЫЙ HIGHLIGHT ESP)
     ---------------------------------------------------------
-    createGroup(VisualPage, "Классический ESP")
+    createGroup(VisualPage, "Оригинальный ESP")
     
-    addToggle(VisualPage, "Включить ESP Игроков", function(v)
-        _G.ClassicESP = v
-        while _G.ClassicESP do task.wait(1)
+    addToggle(VisualPage, "Включить ESP Игроков (Цвет)", function(v)
+        _G.HighlightESP = v
+        while _G.HighlightESP do task.wait(1)
             for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                if p ~= LocalPlayer and p.Character then
                     local isM = p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")
                     local isS = p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")
                     local color = isM and Color3.fromRGB(255, 0, 0) or (isS and Color3.fromRGB(0, 0, 255) or Color3.fromRGB(0, 255, 0))
                     
-                    if not p.Character:FindFirstChild("LemonNormalBox") then
-                        local box = Instance.new("BoxHandleAdornment", p.Character)
-                        box.Name = "LemonNormalBox"
-                        box.Size = Vector3.new(4.3, 5.7, 4.3)
-                        box.AlwaysOnTop = true
-                        box.ZIndex = 4
-                        box.Color3 = color
-                        box.Transparency = 0.65
-                        box.Adornee = p.Character.HumanoidRootPart
-                    else
-                        p.Character.LemonNormalBox.Color3 = color
+                    -- Вешаем хайлайт строго внутрь персонажа, а не во весь воркспейс
+                    local hl = p.Character:FindFirstChild("LemonHighlight")
+                    if not hl then
+                        hl = Instance.new("Highlight")
+                        hl.Name = "LemonHighlight"
+                        hl.Parent = p.Character
                     end
+                    hl.FillColor = color
+                    hl.OutlineColor = color
+                    hl.FillTransparency = 0.4
+                    hl.OutlineTransparency = 0
                 end
             end
         end
-        if not _G.ClassicESP then
-            for _, p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("LemonNormalBox") then p.Character.LemonNormalBox:Destroy() end end
+        if not _G.HighlightESP then
+            for _, p in pairs(Players:GetPlayers()) do 
+                if p.Character and p.Character:FindFirstChild("LemonHighlight") then 
+                    p.Character.LemonHighlight:Destroy() 
+                end 
+            end
         end
     end)
 
-    addToggle(VisualPage, "ESP Пистолета (Бокс)", function(v)
+    addToggle(VisualPage, "ESP Пистолета (Цвет детали)", function(v)
         _G.GunBoxESP = v
         while _G.GunBoxESP do task.wait(0.5)
             local gun = findDroppedGun()
             if gun then
-                if not gun:FindFirstChild("LemonGunBox") then
-                    local box = Instance.new("BoxHandleAdornment", gun)
-                    box.Name = "LemonGunBox"
-                    box.Size = Vector3.new(2.5, 2.5, 2.5)
-                    box.Color3 = Color3.fromRGB(0, 255, 255)
-                    box.AlwaysOnTop = true; box.ZIndex = 5; box.Transparency = 0.4
-                    box.Adornee = gun
+                local hl = gun:FindFirstChild("LemonGunHighlight")
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "LemonGunHighlight"
+                    hl.Parent = gun
                 end
-            else
-                for _, obj in pairs(workspace:GetDescendants()) do if obj.Name == "LemonGunBox" then obj:Destroy() end end
+                hl.FillColor = Color3.fromRGB(0, 255, 255)
+                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                hl.FillTransparency = 0.3
+                hl.OutlineTransparency = 0
             end
         end
         if not _G.GunBoxESP then
-            for _, obj in pairs(workspace:GetDescendants()) do if obj.Name == "LemonGunBox" then obj:Destroy() end end
+            local gun = findDroppedGun()
+            if gun and gun:FindFirstChild("LemonGunHighlight") then gun.LemonGunHighlight:Destroy() end
         end
     end)
 
     ---------------------------------------------------------
     -- ТЕЛЕПОРТЫ
     ---------------------------------------------------------
-    createGroup(TeleportPage, "Безопасные Телепорты под карту")
+    createGroup(TeleportPage, "Безопасные Телепорты")
     
     local function secureTeleport(cf)
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
             local oldN = noclip
             noclip = true
-            hrp.CFrame = cf + Vector3.new(0, 6, 0) -- Посадка чуть выше точки
+            hrp.CFrame = cf + Vector3.new(0, 6, 0)
             task.wait(0.2)
             noclip = oldN
         end
