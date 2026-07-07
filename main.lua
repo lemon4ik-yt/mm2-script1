@@ -1,4 +1,4 @@
--- LEMONHUB V3.2 | TOTAL FIX
+-- LEMONHUB V4 | MULTI-FUNCTIONAL REBORN
 local function safeLoad()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
@@ -12,14 +12,14 @@ local function safeLoad()
     local function notify(text)
         pcall(function()
             StarterGui:SetCore("SendNotification", {
-                Title = "LEMONHUB V3.2",
+                Title = "LEMONHUB V4",
                 Text = text,
                 Duration = 4
             })
         end)
     end
 
-    notify("Скрипт успешно запущен!")
+    notify("Запуск LEMONHUB V4...")
 
     local Clipboard = setclipboard or toclipboard or function() end
     local pGui = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 5)
@@ -42,13 +42,14 @@ local function safeLoad()
     local walkSpeedValue = 16
     local flingTarget = ""
     local serverIndex = 1
+    local spectating = false
 
     ---------------------------------------------------------
     -- МЕНЮ ЧИТА
     ---------------------------------------------------------
     local MenuFrame = Instance.new("Frame")
-    MenuFrame.Size = UDim2.new(0, 560, 0, 400)
-    MenuFrame.Position = UDim2.new(0.5, -280, 0.5, -200)
+    MenuFrame.Size = UDim2.new(0, 560, 0, 420)
+    MenuFrame.Position = UDim2.new(0.5, -280, 0.5, -210)
     MenuFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
     MenuFrame.BackgroundTransparency = 0.15
     MenuFrame.Visible = false
@@ -83,7 +84,7 @@ local function safeLoad()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(0, 300, 1, 0)
     Title.Position = UDim2.new(0, 15, 0, 0)
-    Title.Text = "MM2 | LEMONHUB V3.2"
+    Title.Text = "MM2 | LEMONHUB V4"
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.Font = Enum.Font.SourceSansBold
     Title.TextSize = 18
@@ -127,7 +128,7 @@ local function safeLoad()
     MinimizeBtn.MouseButton1Click:Connect(function() MenuFrame.Visible = false OpenPlacard.Visible = true end)
     OpenPlacard.MouseButton1Click:Connect(function() MenuFrame.Visible = true OpenPlacard.Visible = false end)
 
-    -- Вкладки
+    -- Вкладки (Добавлена вкладка Teleports)
     local TabContainer = Instance.new("Frame")
     TabContainer.Size = UDim2.new(1, -20, 0, 40)
     TabContainer.Position = UDim2.new(0, 10, 0, 55)
@@ -143,13 +144,13 @@ local function safeLoad()
     local Tabs, Pages = {}, {}
     local function createTab(name, order)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 95, 1, 0)
-        btn.Position = UDim2.new(0, (order-1) * 100, 0, 0)
+        btn.Size = UDim2.new(0, 85, 1, 0)
+        btn.Position = UDim2.new(0, (order-1) * 90, 0, 0)
         btn.BackgroundColor3 = order == 1 and Color3.fromRGB(90, 120, 255) or Color3.fromRGB(55, 55, 60)
         btn.Text = name
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         btn.Font = Enum.Font.SourceSansBold
-        btn.TextSize = 15
+        btn.TextSize = 14
         btn.Parent = TabContainer
         round(btn, 6)
 
@@ -179,7 +180,8 @@ local function safeLoad()
     local CombatPage = createTab("Combat", 1)
     local PlayerPage = createTab("Player", 2)
     local VisualPage = createTab("Visual", 3)
-    local OtherPage = createTab("Other", 4)
+    local TeleportPage = createTab("Teleports", 4)
+    local OtherPage = createTab("Other", 5)
 
     local function createGroup(parent, title)
         local frame = Instance.new("Frame")
@@ -256,10 +258,10 @@ local function safeLoad()
         local valLabel = Instance.new("TextLabel")
         valLabel.Size = UDim2.new(0.4, 0, 0, 25)
         valLabel.Position = UDim2.new(1, -100, 0, 5)
-        valLabel.Text = tostring(default)
+        valLabel.Text = text .. ": " .. tostring(default)
         valLabel.TextColor3 = Color3.fromRGB(90, 120, 255)
         valLabel.Parent = frame
-        valLabel.BackgroundTransparency = 1 valLabel.Font = Enum.Font.SourceSansBold valLabel.TextSize = 16 valLabel.TextXAlignment = Enum.TextXAlignment.Right
+        valLabel.BackgroundTransparency = 1 valLabel.Font = Enum.Font.SourceSansBold valLabel.TextSize = 15 valLabel.TextXAlignment = Enum.TextXAlignment.Right
 
         local slideBar = Instance.new("TextButton")
         slideBar.Size = UDim2.new(1, -20, 0, 6)
@@ -280,7 +282,7 @@ local function safeLoad()
             local pct = math.clamp((input.Position.X - slideBar.AbsolutePosition.X) / slideBar.AbsoluteSize.X, 0, 1)
             slideFill.Size = UDim2.new(pct, 0, 1, 0)
             local value = math.floor(min + (max - min) * pct)
-            valLabel.Text = tostring(value)
+            valLabel.Text = text .. ": " .. tostring(value)
             callback(value)
         end
         slideBar.InputBegan:Connect(function(input)
@@ -308,25 +310,26 @@ local function safeLoad()
     end
 
     ---------------------------------------------------------
-    -- НАСТРОЙКИ ФУНКЦИОНАЛА
+    -- УЛЬТИМАТИВНЫЙ ПОИСК ОБЪЕКТОВ MM2 (ГЛОБАЛЬНЫЙ ФИКС)
     ---------------------------------------------------------
-    
     local function findGun()
-        local gun = workspace:FindFirstChild("GunDrop")
-        if not gun then
-            for _, obj in pairs(workspace:GetChildren()) do
-                if obj:IsA("Tool") and (string.find(obj.Name, "Gun") or obj:FindFirstChild("Detections")) then gun = obj break end
-                if obj:IsA("Part") and string.find(obj.Name, "Gun") then gun = obj break end
+        -- Ищет абсолютно везде в workspace
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Tool") and (string.find(obj.Name, "Gun") or obj:FindFirstChild("Detections")) then
+                return obj:FindFirstChild("Handle") or obj
+            elseif obj.Name == "GunDrop" then
+                return obj
             end
         end
-        return gun
+        return nil
     end
 
-    createGroup(CombatPage, "Пистолет")
+    createGroup(CombatPage, "Управление Оружием")
     addButton(CombatPage, "Забрать Пистолет (Вручную)", function()
         local g = findGun()
-        if g and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = g.CFrame
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if g and hrp then
+            hrp.CFrame = g.CFrame
         else
             notify("Пистолет на земле не найден!")
         end
@@ -335,30 +338,29 @@ local function safeLoad()
     addToggle(CombatPage, "Авто-подбор пистолета", function(v)
         _G.AutoGrab = v 
         while _G.AutoGrab do 
-            task.wait(0.5) 
+            task.wait(0.3) 
             local g = findGun()
-            if g and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local p = g:IsA("Tool") and g:FindFirstChild("Handle") or g
-                if p then LocalPlayer.Character.HumanoidRootPart.CFrame = p.CFrame end
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if g and hrp then 
+                hrp.CFrame = g.CFrame 
             end 
         end
     end)
 
-    createGroup(CombatPage, "Auto Farm")
+    createGroup(CombatPage, "Глобальный Автофарм")
     addToggle(CombatPage, "Автофарм Монет & Ивентов", function(v)
         _G.CoinFarm = v
         while _G.CoinFarm do
-            task.wait(0.3)
-            for _, folder in pairs(workspace:GetChildren()) do
-                if folder.Name == "Normal" or folder:FindFirstChild("Map") then
-                    for _, obj in pairs(folder:GetDescendants()) do
-                        if (string.find(string.lower(obj.Name), "coin") or string.find(string.lower(obj.Name), "candy") or obj.Name == "TouchInterest") and firetouchinterest then
-                            local targetPart = obj:IsA("TouchInterest") and obj.Parent or obj
-                            if targetPart:IsA("BasePart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                firetouchinterest(LocalPlayer.Character.HumanoidRootPart, targetPart, 0)
-                                task.wait(0.02)
-                                firetouchinterest(LocalPlayer.Character.HumanoidRootPart, targetPart, 1)
-                            end
+            task.wait(0.2)
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                -- Сканируем всю карту на наличие TouchInterest монет
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("TouchInterest") and obj.Parent and (string.find(string.lower(obj.Parent.Name), "coin") or string.find(string.lower(obj.Parent.Name), "candy") or string.find(string.lower(obj.Parent.Name), "token")) then
+                        if firetouchinterest then
+                            firetouchinterest(hrp, obj.Parent, 0)
+                            task.wait(0.01)
+                            firetouchinterest(hrp, obj.Parent, 1)
                         end
                     end
                 end
@@ -366,14 +368,15 @@ local function safeLoad()
         end
     end)
 
-    createGroup(PlayerPage, "Движение")
-    addSlider(PlayerPage, "WalkSpeed (Скорость)", 16, 120, 16, function(v) walkSpeedValue = v end)
+    -- Настройки Скорости и Полета
+    createGroup(PlayerPage, "Кастомизация Игрока")
+    addSlider(PlayerPage, "Скорость", 16, 120, 16, function(v) walkSpeedValue = v end)
     
     RunService.Heartbeat:Connect(function()
         if walkSpeedValue > 16 and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
             local hum = LocalPlayer.Character.Humanoid
             if hum.MoveDirection.Magnitude > 0 then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame + (hum.MoveDirection * (walkSpeedValue / 120))
+                LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame + (hum.MoveDirection * (walkSpeedValue / 130))
             end
         end
     end)
@@ -392,7 +395,7 @@ local function safeLoad()
         end
     end)
 
-    addToggle(PlayerPage, "Fly (Рабочий Полет)", function(v)
+    addToggle(PlayerPage, "Fly (Полет)", function(v)
         flying = v
         if flying then
             task.spawn(function()
@@ -432,9 +435,12 @@ local function safeLoad()
             end)
         end
     end)
-    addSlider(PlayerPage, "Fly Speed (Скорость полета)", 20, 200, 50, function(v) flySpeed = v end)
+    addSlider(PlayerPage, "Скорость полета", 20, 200, 50, function(v) flySpeed = v end)
 
-    createGroup(VisualPage, "Визуалы")
+    ---------------------------------------------------------
+    -- НАБЛЮДЕНИЕ (SPECTATE) & ESP
+    ---------------------------------------------------------
+    createGroup(VisualPage, "Подсветка")
     addToggle(VisualPage, "ESP Роли игроков", function(v)
         _G.ESP = v
         while _G.ESP do task.wait(1)
@@ -470,21 +476,106 @@ local function safeLoad()
                 end
             end
         end
-        if not _G.GunESP then
-            local g = findGun()
-            if g then
-                local m = g:IsA("Tool") and g or g.Parent
-                if m and m:FindFirstChild("GunHighlight") then m.GunHighlight:Destroy() end
+    end)
+
+    -- Поиск ролей для Spectate
+    local function getRoleTarget(roleName)
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("Humanoid") then
+                if roleName == "Murder" and (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) then return p end
+                if roleName == "Sheriff" and (p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")) then return p end
+            end
+        end
+        return nil
+    end
+
+    createGroup(VisualPage, "Камера Наблюдения")
+    addButton(VisualPage, "Смотреть за Мардером", function()
+        spectating = not spectating
+        local target = getRoleTarget("Murder")
+        if spectating and target and target.Character then
+            workspace.CurrentCamera.CameraSubject = target.Character:FindFirstChild("Humanoid")
+        else
+            workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
+            spectating = false
+        end
+    end)
+
+    addButton(VisualPage, "Смотреть за Шерифом", function()
+        spectating = not spectating
+        local target = getRoleTarget("Sheriff")
+        if spectating and target and target.Character then
+            workspace.CurrentCamera.CameraSubject = target.Character:FindFirstChild("Humanoid")
+        else
+            workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
+            spectating = false
+        end
+    end)
+
+
+    ---------------------------------------------------------
+    -- ВКЛАДКА ТЕЛЕПОРТОВ (НОВАЯ)
+    ---------------------------------------------------------
+    createGroup(TeleportPage, "Точки локаций")
+    addButton(TeleportPage, "Телепорт в Лобби (Спавн)", function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.CFrame = CFrame.new(-108, 138, 11) end
+    end)
+
+    addButton(TeleportPage, "Телепорт на Карту", function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local map = workspace:FindFirstChild("Normal") or workspace:FindFirstChild("Map")
+            if map then
+                local spawnPart = map:FindFirstChildDescendant("Spawn") or map:FindFirstChildDescendant("CoinContainer")
+                if spawnPart then hrp.CFrame = spawnPart.CFrame + Vector3.new(0,3,0)
+                else hrp.CFrame = map:GetPivot() end
+            else
+                notify("Активная карта не найдена!")
             end
         end
     end)
 
-    createGroup(OtherPage, "Fling Игроков")
+    createGroup(TeleportPage, "Телепорт к Игрокам")
+    local tpIndex = 1
+    local PlayerTpBtn = Instance.new("TextButton")
+    PlayerTpBtn.Size = UDim2.new(1, -10, 0, 40)
+    PlayerTpBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    PlayerTpBtn.Text = "Выбрать игрока для ТП"
+    PlayerTpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PlayerTpBtn.Font = Enum.Font.SourceSansBold; PlayerTpBtn.TextSize = 15
+    PlayerTpBtn.Parent = TeleportPage
+    round(PlayerTpBtn, 6)
+
+    PlayerTpBtn.MouseButton1Click:Connect(function()
+        local list = Players:GetPlayers()
+        if #list <= 1 then return end
+        tpIndex = tpIndex + 1 if tpIndex > #list then tpIndex = 1 end
+        if list[tpIndex] == LocalPlayer then tpIndex = tpIndex + 1 end
+        if tpIndex > #list then tpIndex = 1 end
+        local t = list[tpIndex]
+        if t then PlayerTpBtn.Text = "ТП к: " .. t.DisplayName end
+    end)
+
+    addButton(TeleportPage, "Выполнить Телепорт к игроку", function()
+        local list = Players:GetPlayers()
+        local target = list[tpIndex]
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and hrp then
+            hrp.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 2, 0)
+        end
+    end)
+
+
+    ---------------------------------------------------------
+    -- FLING И GHOST FLING (ФЛИНГ ПОСЛЕ СМЕРТИ)
+    ---------------------------------------------------------
+    createGroup(OtherPage, "Fling Система (Работает и у мертвых)")
 
     local NameInput = Instance.new("TextBox")
     NameInput.Size = UDim2.new(1, -10, 0, 40)
     NameInput.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-    NameInput.PlaceholderText = "Введите ник игрока..."
+    NameInput.PlaceholderText = "Ник для Флинга..."
     NameInput.Text = ""
     NameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
     NameInput.Parent = OtherPage
@@ -492,21 +583,26 @@ local function safeLoad()
     NameInput.FocusLost:Connect(function() flingTarget = NameInput.Text end)
 
     local function executeFling(targetChar)
-        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        -- Поиск активного RootPart (работает даже через Observer-камеру у мертвых)
+        local hrp = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) or (LocalPlayer:FindFirstChild("PlayerGui") and workspace.CurrentCamera.CameraSubject and workspace.CurrentCamera.CameraSubject.Parent:FindFirstChild("HumanoidRootPart"))
         local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-        if hrp and targetHrp then
-            local oldCFrame = hrp.CFrame
-            local vel = Instance.new("BodyAngularVelocity", hrp)
+        
+        if targetHrp then
+            local oldCFrame = hrp and hrp.CFrame or LocalPlayer.Character:GetPivot()
+            local vel = Instance.new("BodyAngularVelocity")
             vel.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
             vel.AngularVelocity = Vector3.new(0, 99999, 0)
+            vel.Parent = hrp or LocalPlayer.Character:FindFirstChildDescendant("RootPart")
             
             local startTime = tick()
-            while tick() - startTime < 1.0 do
+            while tick() - startTime < 1.2 do
                 RunService.Heartbeat:Wait()
-                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, -0.5, 0)
+                if hrp and targetHrp then
+                    hrp.CFrame = targetHrp.CFrame * CFrame.new(0, -0.4, 0)
+                end
             end
             vel:Destroy()
-            hrp.CFrame = oldCFrame
+            if hrp then hrp.CFrame = oldCFrame end
         end
     end
 
@@ -518,33 +614,15 @@ local function safeLoad()
         end
     end)
 
-    local SelectBtn = Instance.new("TextButton")
-    SelectBtn.Size = UDim2.new(1, -10, 0, 40)
-    SelectBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 70)
-    SelectBtn.Text = "Выбрать игрока с сервера"
-    SelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SelectBtn.Parent = OtherPage
-    round(SelectBtn, 6)
-
-    SelectBtn.MouseButton1Click:Connect(function()
-        local list = Players:GetPlayers()
-        if #list <= 1 then return end
-        serverIndex = serverIndex + 1
-        if serverIndex > #list then serverIndex = 1 end
-        if list[serverIndex] == LocalPlayer then serverIndex = serverIndex + 1 end
-        if serverIndex > #list then serverIndex = 1 end
-        local target = list[serverIndex]
-        if target then NameInput.Text = target.Name flingTarget = target.Name SelectBtn.Text = "Выбран: " .. target.DisplayName end
-    end)
-
     addButton(OtherPage, "Fling ВЕСЬ СЕРВЕР", function()
-        notify("Уничтожение сервера запущено...")
+        notify("Массовый Флинг запущен!")
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                executeFling(p.Character) task.wait(0.1)
+            if p ~= LocalPlayer and p.Character then
+                executeFling(p.Character) task.wait(0.05)
             end
         end
     end)
+
 
     ---------------------------------------------------------
     -- ОКНО АВТОРИЗАЦИИ
@@ -560,10 +638,8 @@ local function safeLoad()
     KeyTitle.Size = UDim2.new(1, 0, 0, 40)
     KeyTitle.Text = "LEMONHUB | Авторизация"
     KeyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    KeyTitle.Font = Enum.Font.SourceSansBold
-    KeyTitle.TextSize = 16
-    KeyTitle.BackgroundTransparency = 1
-    KeyTitle.Parent = KeyFrame
+    KeyTitle.Font = Enum.Font.SourceSansBold; KeyTitle.TextSize = 16
+    KeyTitle.BackgroundTransparency = 1; KeyTitle.Parent = KeyFrame
 
     local InputBox = Instance.new("TextBox")
     InputBox.Size = UDim2.new(0, 260, 0, 40)
@@ -603,7 +679,7 @@ local function safeLoad()
         if InputBox.Text == "ilovepigs" then
             KeyFrame:Destroy()
             MenuFrame.Visible = true
-            notify("Ключ принят! Меню открыто.")
+            notify("Доступ разрешен! LEMONHUB открыт.")
         else
             InputBox.Text = ""
             InputBox.PlaceholderText = "Неверный ключ!"
@@ -612,4 +688,4 @@ local function safeLoad()
 end
 
 local success, err = pcall(safeLoad)
-if not success then print("Ошибка загрузки хаба: ", err) end
+if not success then print("Ошибка LEMONHUB: ", err) end
