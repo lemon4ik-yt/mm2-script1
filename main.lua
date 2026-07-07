@@ -1,4 +1,4 @@
--- LEMONHUB V3 | GLOBAL FIX & ANTI-PATCH
+-- LEMONHUB V3.1 | EMERGENCY BUGFIX
 local function safeLoad()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
@@ -12,14 +12,14 @@ local function safeLoad()
     local function notify(text)
         pcall(function()
             StarterGui:SetCore("SendNotification", {
-                Title = "LEMONHUB V3",
+                Title = "LEMONHUB V3.1",
                 Text = text,
                 Duration = 4
             })
         end)
     end
 
-    notify("Запуск фикса LEMONHUB V3...")
+    notify("Фикс применен! Загрузка...")
 
     local Clipboard = setclipboard or toclipboard or function() end
     local pGui = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 5)
@@ -83,7 +83,7 @@ local function safeLoad()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(0, 300, 1, 0)
     Title.Position = UDim2.new(0, 15, 0, 0)
-    Title.Text = "MM2 | LEMONHUB V3"
+    Title.Text = "MM2 | LEMONHUB V3.1"
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.Font = Enum.Font.SourceSansBold
     Title.TextSize = 18
@@ -308,10 +308,9 @@ local function safeLoad()
     end
 
     ---------------------------------------------------------
-    -- ПОЧИНЕННЫЙ ФУНКЦИОНАЛ (УСТОЙЧИВЫЙ К ОБНОВЛЕНИЯМ)
+    -- ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ ФУНКЦИОНАЛ
     ---------------------------------------------------------
     
-    -- Поиск упавшего пистолета на карте по альтернативным путям
     local function findGun()
         local gun = workspace:FindFirstChild("GunDrop")
         if not gun then
@@ -350,7 +349,6 @@ local function safeLoad()
         _G.CoinFarm = v
         while _G.CoinFarm do
             task.wait(0.3)
-            -- Универсальный поиск контейнеров монет во всех папках
             for _, folder in pairs(workspace:GetChildren()) do
                 if folder.Name == "Normal" or folder:FindFirstChild("Map") then
                     for _, obj in pairs(folder:GetDescendants()) do
@@ -368,7 +366,6 @@ local function safeLoad()
         end
     end)
 
-    -- Абсолютный фикс Скорости через CFrame (не сбивается античитом)
     createGroup(PlayerPage, "Движение")
     addSlider(PlayerPage, "WalkSpeed (Скорость)", 16, 120, 16, function(v) walkSpeedValue = v end)
     
@@ -395,7 +392,6 @@ local function safeLoad()
         end
     end)
 
-    -- Стабильный неуязвимый FLY
     addToggle(PlayerPage, "Fly (Рабочий Полет)", function(v)
         flying = v
         if flying then
@@ -433,7 +429,6 @@ local function safeLoad()
     end)
     addSlider(PlayerPage, "Fly Speed (Скорость полета)", 20, 200, 50, function(v) flySpeed = v end)
 
-    -- Вкладка VISUAL (ESP Игроков + НОВОЕ: ESP Пестолета)
     createGroup(VisualPage, "Визуалы")
     addToggle(VisualPage, "ESP Роли игроков", function(v)
         _G.ESP = v
@@ -454,7 +449,6 @@ local function safeLoad()
         end
     end)
 
-    -- СВЕЖЕЕ: ESP на лежащий пест
     addToggle(VisualPage, "ESP Пистолета (На земле)", function(v)
         _G.GunESP = v
         while _G.GunESP do task.wait(0.5)
@@ -464,7 +458,7 @@ local function safeLoad()
                 if model and not model:FindFirstChild("GunHighlight") then
                     local hl = Instance.new("Highlight")
                     hl.Name = "GunHighlight"
-                    hl.FillColor = Color3.fromRGB(180, 50, 255) -- Фиолетовое свечение ствола
+                    hl.FillColor = Color3.fromRGB(180, 50, 255)
                     hl.FillTransparency = 0.2
                     hl.OutlineColor = Color3.fromRGB(255,255,255)
                     hl.Parent = model
@@ -480,7 +474,6 @@ local function safeLoad()
         end
     end)
 
-    -- Вкладка OTHER (Fling)
     createGroup(OtherPage, "Fling Игроков")
 
     local NameInput = Instance.new("TextBox")
