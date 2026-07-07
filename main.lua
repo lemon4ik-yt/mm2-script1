@@ -1,4 +1,4 @@
--- LEMONHUB V9.2 | FULL MENU (FIXED GUN SYSTEM)
+-- LEMONHUB V9.3 | FULL MENU & NEW GUN BLINK SYSTEM
 local function safeLoad()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
@@ -13,7 +13,7 @@ local function safeLoad()
     local function notify(text)
         pcall(function()
             StarterGui:SetCore("SendNotification", {
-                Title = "LEMONHUB V9.2",
+                Title = "LEMONHUB V9.3",
                 Text = text,
                 Duration = 3
             })
@@ -198,14 +198,17 @@ local function safeLoad()
         end)
     end
 
-    -- Умная логика поиска именно лежащего песта
-    local function getDroppedGun()
-        local gun = Workspace:FindFirstChild("GunDrop")
-        if not gun and Workspace:FindFirstChild("Setup") then
-            gun = Workspace.Setup:FindFirstChild("GunDrop")
-        end
-        if gun and (gun:IsA("BasePart") or gun:FindFirstChild("ClassName") == "MeshPart" or gun:FindFirstChild("Handle")) then
-            return gun
+    -- Твоя логика детекта выпавшего пистолета
+    local function findTargetGun()
+        local targets = {"Gun", "DroppedGun", "GunDrop"}
+        for _, name in pairs(targets) do
+            local obj = Workspace:FindFirstChild(name)
+            if not obj and Workspace:FindFirstChild("Setup") then
+                obj = Workspace.Setup:FindFirstChild(name)
+            end
+            if obj and (obj:IsA("BasePart") or obj:FindFirstChild("Handle") or obj:IsA("Model")) then
+                return obj
+            end
         end
         return nil
     end
@@ -224,18 +227,23 @@ local function safeLoad()
         return nil
     end
 
+    -- Твоя логика моментального блинка (ТП туда-обратно)
     local function grabGunWithReturn()
-        local gun = getDroppedGun()
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if gun and hrp then
-            savedLocation = hrp.CFrame
+        local gun = findTargetGun()
+        
+        if hrp and gun then
+            local originalPos = hrp.CFrame
+            
+            -- Временный проход сквозь стены, чтобы не застрять при блинке
             for _, part in pairs(char:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
-            hrp.CFrame = gun.CFrame
-            task.wait(0.12)
-            if savedLocation then hrp.CFrame = savedLocation end
+            
+            hrp.CFrame = gun:IsA("Model") and gun:GetPivot() or gun.CFrame
+            task.wait(0.1) -- Твоя задержка подбора
+            hrp.CFrame = originalPos
         end
     end
 
@@ -250,7 +258,7 @@ local function safeLoad()
         _G.AutoGrab = v
         while _G.AutoGrab do
             task.wait(0.2)
-            if getDroppedGun() then grabGunWithReturn() end
+            if findTargetGun() then grabGunWithReturn() end
         end
     end)
 
@@ -276,7 +284,7 @@ local function safeLoad()
         end
     end)
 
-    -- Кнопка для мобилок с крестиком закрытия
+    -- Кнопка для мобилок с возможностью убрать ее (крестик)
     local MobileContainer = Instance.new("Frame")
     MobileContainer.Size = UDim2.new(0, 85, 0, 85)
     MobileContainer.Position = UDim2.new(0.75, 0, 0.4, 0)
@@ -408,7 +416,7 @@ local function safeLoad()
     addToggle(VisualPage, "Подсветка Упавшего Пистолета", function(v)
         _G.GunESP = v
         while _G.GunESP do task.wait(0.5)
-            local gun = getDroppedGun()
+            local gun = findTargetGun()
             if gun then
                 local hl = gun:FindFirstChild("LemonGunHl")
                 if not hl then
@@ -422,7 +430,7 @@ local function safeLoad()
             end
         end
         if not _G.GunESP then
-            local gun = getDroppedGun()
+            local gun = findTargetGun()
             if gun and gun:FindFirstChild("LemonGunHl") then gun.LemonGunHl:Destroy() end
         end
     end)
@@ -472,7 +480,7 @@ local function safeLoad()
     end)
 
     ---------------------------------------------------------
-    -- ВКЛАДКА: TROLL (ФЛИHГ ТУТ)
+    -- ВКЛАДКА: TROLL (ФЛИHГ)
     ---------------------------------------------------------
     createGroup(TrollPage, "Разнос Сервера")
 
@@ -533,7 +541,7 @@ local function safeLoad()
     round(KeyFrame, 10)
 
     local KTitle = Instance.new("TextLabel")
-    KTitle.Size = UDim2.new(1, 0, 0, 35); KTitle.Text = "LEMONHUB V9.2 | Авторизация"; KTitle.TextColor3 = Color3.fromRGB(255,255,255)
+    KTitle.Size = UDim2.new(1, 0, 0, 35); KTitle.Text = "LEMONHUB V9.3 | Авторизация"; KTitle.TextColor3 = Color3.fromRGB(255,255,255)
     KTitle.BackgroundTransparency = 1; KTitle.Font = Enum.Font.SourceSansBold; KTitle.Parent = KeyFrame
 
     local InputBox = Instance.new("TextBox")
