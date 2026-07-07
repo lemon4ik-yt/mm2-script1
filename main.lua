@@ -1,4 +1,4 @@
--- LEMONHUB V2 | MM2 CUSTOM SCRIPT
+-- LEMONHUB V3 | GLOBAL FIX & ANTI-PATCH
 local function safeLoad()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
@@ -12,14 +12,14 @@ local function safeLoad()
     local function notify(text)
         pcall(function()
             StarterGui:SetCore("SendNotification", {
-                Title = "LEMONHUB",
+                Title = "LEMONHUB V3",
                 Text = text,
                 Duration = 4
             })
         end)
     end
 
-    notify("Загрузка LEMONHUB V2...")
+    notify("Запуск фикса LEMONHUB V3...")
 
     local Clipboard = setclipboard or toclipboard or function() end
     local pGui = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 5)
@@ -36,7 +36,7 @@ local function safeLoad()
         corner.Parent = parent
     end
 
-    -- Настройки читов
+    -- Настройки
     local flySpeed = 50
     local flying = false
     local walkSpeedValue = 16
@@ -83,7 +83,7 @@ local function safeLoad()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(0, 300, 1, 0)
     Title.Position = UDim2.new(0, 15, 0, 0)
-    Title.Text = "MM2 | LEMONHUB V2"
+    Title.Text = "MM2 | LEMONHUB V3"
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.Font = Enum.Font.SourceSansBold
     Title.TextSize = 18
@@ -181,13 +181,11 @@ local function safeLoad()
     local VisualPage = createTab("Visual", 3)
     local OtherPage = createTab("Other", 4)
 
-    -- Конструкторы элементов интерфейса
     local function createGroup(parent, title)
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(1, -10, 0, 30)
         frame.BackgroundTransparency = 1
         frame.Parent = parent
-        
         local label = Instance.new("TextLabel")
         label.Size = UDim2.new(1, 0, 1, 0)
         label.Text = "—— " .. title .. " ——"
@@ -234,8 +232,8 @@ local function safeLoad()
         local enabled = false
         btn.MouseButton1Click:Connect(function()
             enabled = not enabled
-            TweenService:Create(circle, TweenInfo.new(0.18), {Position = UDim2.new(0, enabled and 25 or 2, 0.5, -9)}):Play()
-            TweenService:Create(btn, TweenInfo.new(0.18), {BackgroundColor3 = enabled and Color3.fromRGB(90, 120, 255) or Color3.fromRGB(75, 75, 80)}):Play()
+            TweenService:Create(circle, TweenInfo.new(0.15), {Position = UDim2.new(0, enabled and 25 or 2, 0.5, -9)}):Play()
+            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = enabled and Color3.fromRGB(90, 120, 255) or Color3.fromRGB(75, 75, 80)}):Play()
             task.spawn(callback, enabled)
         end)
     end
@@ -310,35 +308,59 @@ local function safeLoad()
     end
 
     ---------------------------------------------------------
-    -- НАПОЛНЕНИЕ НАСТРОЕК (ФУНКЦИОНАЛ)
+    -- ПОЧИНЕННЫЙ ФУНКЦИОНАЛ (УСТОЙЧИВЫЙ К ОБНОВЛЕНИЯМ)
     ---------------------------------------------------------
     
-    -- Вкладка COMBAT (Разделение на подбор и автофарм)
-    createGroup(CombatPage, "Пистолет")
-    local function grabGun()
+    -- Поиск упавшего пистолета на карте по альтернативным путям
+    local function findGun()
         local gun = workspace:FindFirstChild("GunDrop")
-        if gun and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = gun.CFrame
+        if not gun then
+            for _, obj in pairs(workspace:GetChildren()) do
+                if obj:IsA("Tool") and (string.find(obj.Name, "Gun") or obj:FindFirstChild("Detections")) then gun = obj break end
+                if obj:IsA("Part") and string.find(obj.Name, "Gun") then gun = obj break end
+            end
         end
+        return gun
     end
-    addButton(CombatPage, "Забрать Пистолет (Один раз)", grabGun)
+
+    createGroup(CombatPage, "Пистолет")
+    addButton(CombatPage, "Забрать Пистолет (Вручную)", function()
+        local g = findGun()
+        if g and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = g.CFrame
+        else
+            notify("Пистолет на земле не найден!")
+        end
+    end)
+
     addToggle(CombatPage, "Авто-подбор пистолета", function(v)
-        _G.AutoGrab = v while _G.AutoGrab do task.wait(0.3) grabGun() end
+        _G.AutoGrab = v 
+        while _G.AutoGrab do 
+            task.wait(0.5) 
+            local g = findGun()
+            if g and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local p = g:IsA("Tool") and g:FindFirstChild("Handle") or g
+                if p then LocalPlayer.Character.HumanoidRootPart.CFrame = p.CFrame end
+            end 
+        end
     end)
 
     createGroup(CombatPage, "Auto Farm")
     addToggle(CombatPage, "Автофарм Монет & Ивентов", function(v)
         _G.CoinFarm = v
         while _G.CoinFarm do
-            task.wait(0.2)
-            local map = workspace:FindFirstChild("Normal") and workspace.Normal:FindFirstChild("Map")
-            if map then
-                for _, obj in pairs(map:GetDescendants()) do
-                    if obj.Name == "CoinContainer" or obj.Name == "CandyContainer" or obj:FindFirstChild("TouchInterest") then
-                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and firetouchinterest then
-                            firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj, 0)
-                            task.wait(0.01)
-                            firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj, 1)
+            task.wait(0.3)
+            -- Универсальный поиск контейнеров монет во всех папках
+            for _, folder in pairs(workspace:GetChildren()) do
+                if folder.Name == "Normal" or folder:FindFirstChild("Map") then
+                    for _, obj in pairs(folder:GetDescendants()) do
+                        if (string.find(string.lower(obj.Name), "coin") or string.find(string.lower(obj.Name), "candy") or obj.Name == "TouchInterest") and firetouchinterest then
+                            local targetPart = obj:IsA("TouchInterest") and obj.Parent or obj
+                            if targetPart:IsA("BasePart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                                firetouchinterest(LocalPlayer.Character.HumanoidRootPart, targetPart, 0)
+                                task.wait(0.02)
+                                firetouchinterest(LocalPlayer.Character.HumanoidRootPart, targetPart, 1)
+                            end
                         end
                     end
                 end
@@ -346,14 +368,16 @@ local function safeLoad()
         end
     end)
 
-    -- Вкладка PLAYER (Улучшенный Fly и Движение)
+    -- Абсолютный фикс Скорости через CFrame (не сбивается античитом)
     createGroup(PlayerPage, "Движение")
-    addSlider(PlayerPage, "WalkSpeed (Скорость)", 16, 150, 16, function(v)
-        walkSpeedValue = v pcall(function() LocalPlayer.Character.Humanoid.WalkSpeed = v end)
-    end)
-    task.spawn(function()
-        while true do task.wait(0.4)
-            pcall(function() if LocalPlayer.Character.Humanoid.WalkSpeed ~= walkSpeedValue then LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeedValue end end)
+    addSlider(PlayerPage, "WalkSpeed (Скорость)", 16, 120, 16, function(v) walkSpeedValue = v end)
+    
+    RunService.Heartbeat:Connect(function()
+        if walkSpeedValue > 16 and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local hum = LocalPlayer.Character.Humanoid
+            if hum.MoveDirection.Magnitude > 0 then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame + (hum.MoveDirection * (walkSpeedValue / 120))
+            end
         end
     end)
 
@@ -371,50 +395,45 @@ local function safeLoad()
         end
     end)
 
-    -- ИДЕАЛЬНЫЙ ФЛАЙ (Камера-ориентированный)
-    addToggle(PlayerPage, "Fly (Улучшенный Полет)", function(v)
+    -- Стабильный неуязвимый FLY
+    addToggle(PlayerPage, "Fly (Рабочий Полет)", function(v)
         flying = v
         if flying then
-            pcall(function()
-                local char = LocalPlayer.Character
-                local torso = char:WaitForChild("HumanoidRootPart")
-                local humanoid = char:WaitForChild("Humanoid")
+            task.spawn(function()
+                local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+                local hrp = char:WaitForChild("HumanoidRootPart")
                 
-                local posPart = Instance.new("BodyPosition", torso)
-                posPart.maxForce = Vector3.new(9e9, 9e9, 9e9)
-                posPart.position = torso.Position
+                local bv = Instance.new("BodyVelocity", hrp)
+                bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+                bv.Velocity = Vector3.new(0,0,0)
+                
+                local bg = Instance.new("BodyGyro", hrp)
+                bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+                bg.CFrame = hrp.CFrame
 
-                local gyro = Instance.new("BodyGyro", torso)
-                gyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-                gyro.cframe = torso.CFrame
-
-                humanoid.PlatformStand = true
-
-                while flying and char and torso and parent do
+                while flying and char and hrp and bv.Parent do
                     RunService.RenderStepped:Wait()
-                    local camCFrame = workspace.CurrentCamera.CFrame
-                    local dir = Vector3.new()
-
-                    if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + camCFrame.LookVector end
-                    if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - camCFrame.LookVector end
-                    if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - camCFrame.RightVector end
-                    if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + camCFrame.RightVector end
-                    if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
-                    if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then dir = dir - Vector3.new(0, 1, 0) end
-
-                    posPart.position = posPart.position + (dir * (flySpeed / 40))
-                    gyro.cframe = camCFrame
+                    local cam = workspace.CurrentCamera.CFrame
+                    local md = Vector3.new()
+                    
+                    if UIS:IsKeyDown(Enum.KeyCode.W) then md = md + cam.LookVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.S) then md = md - cam.LookVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.A) then md = md - cam.RightVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.D) then md = md + cam.RightVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.Space) then md = md + Vector3.new(0,1,0) end
+                    if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then md = md - Vector3.new(0,1,0) end
+                    
+                    bv.Velocity = md.Unit * flySpeed
+                    if md == Vector3.new(0,0,0) then bv.Velocity = Vector3.new(0,0,0) end
+                    bg.CFrame = cam
                 end
-                
-                posPart:Destroy()
-                gyro:Destroy()
-                humanoid.PlatformStand = false
+                bv:Destroy() bg:Destroy()
             end)
         end
     end)
     addSlider(PlayerPage, "Fly Speed (Скорость полета)", 20, 200, 50, function(v) flySpeed = v end)
 
-    -- Вкладка VISUAL
+    -- Вкладка VISUAL (ESP Игроков + НОВОЕ: ESP Пестолета)
     createGroup(VisualPage, "Визуалы")
     addToggle(VisualPage, "ESP Роли игроков", function(v)
         _G.ESP = v
@@ -435,23 +454,45 @@ local function safeLoad()
         end
     end)
 
-    -- Вкладка OTHER (Fling функционал)
+    -- СВЕЖЕЕ: ESP на лежащий пест
+    addToggle(VisualPage, "ESP Пистолета (На земле)", function(v)
+        _G.GunESP = v
+        while _G.GunESP do task.wait(0.5)
+            local g = findGun()
+            if g then
+                local model = g:IsA("Tool") and g or g.Parent
+                if model and not model:FindFirstChild("GunHighlight") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "GunHighlight"
+                    hl.FillColor = Color3.fromRGB(180, 50, 255) -- Фиолетовое свечение ствола
+                    hl.FillTransparency = 0.2
+                    hl.OutlineColor = Color3.fromRGB(255,255,255)
+                    hl.Parent = model
+                end
+            end
+        end
+        if not _G.GunESP then
+            local g = findGun()
+            if g then
+                local m = g:IsA("Tool") and g or g.Parent
+                if m and m:FindFirstChild("GunHighlight") then m.GunHighlight:Destroy() end
+            end
+        end
+    end)
+
+    -- Вкладка OTHER (Fling)
     createGroup(OtherPage, "Fling Игроков")
 
-    -- Поле ввода никнейма
     local NameInput = Instance.new("TextBox")
     NameInput.Size = UDim2.new(1, -10, 0, 40)
     NameInput.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
     NameInput.PlaceholderText = "Введите ник игрока..."
     NameInput.Text = ""
     NameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NameInput.Font = Enum.Font.SourceSans
-    NameInput.TextSize = 16
     NameInput.Parent = OtherPage
     round(NameInput, 6)
     NameInput.FocusLost:Connect(function() flingTarget = NameInput.Text end)
 
-    -- Функция жесткого кручения персонажа (Физика Флинга)
     local function executeFling(targetChar)
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
@@ -459,39 +500,31 @@ local function safeLoad()
             local oldCFrame = hrp.CFrame
             local vel = Instance.new("BodyAngularVelocity", hrp)
             vel.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            vel.AngularVelocity = Vector3.new(0, 99999, 0) -- Вращение на бешеной скорости
+            vel.AngularVelocity = Vector3.new(0, 99999, 0)
             
-            -- Телепортируемся под/в игрока на секунду, чтобы выбить физику
             local startTime = tick()
-            while tick() - startTime < 1.2 do
+            while tick() - startTime < 1.0 do
                 RunService.Heartbeat:Wait()
-                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, -1, 0)
+                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, -0.5, 0)
             end
             vel:Destroy()
-            hrp.CFrame = oldCFrame -- Возвращаемся обратно
+            hrp.CFrame = oldCFrame
         end
     end
 
     addButton(OtherPage, "Fling по никнейму", function()
         for _, p in pairs(Players:GetPlayers()) do
             if string.find(string.lower(p.Name), string.lower(flingTarget)) or string.find(string.lower(p.DisplayName), string.lower(flingTarget)) then
-                if p ~= LocalPlayer and p.Character then
-                    notify("Атакую игрока: " .. p.DisplayName)
-                    executeFling(p.Character)
-                    break
-                end
+                if p ~= LocalPlayer and p.Character then executeFling(p.Character) break end
             end
         end
     end)
 
-    local SelectBtn
-    SelectBtn = Instance.new("TextButton")
+    local SelectBtn = Instance.new("TextButton")
     SelectBtn.Size = UDim2.new(1, -10, 0, 40)
     SelectBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 70)
     SelectBtn.Text = "Выбрать игрока с сервера"
     SelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SelectBtn.Font = Enum.Font.SourceSansBold
-    SelectBtn.TextSize = 15
     SelectBtn.Parent = OtherPage
     round(SelectBtn, 6)
 
@@ -502,29 +535,21 @@ local function safeLoad()
         if serverIndex > #list then serverIndex = 1 end
         if list[serverIndex] == LocalPlayer then serverIndex = serverIndex + 1 end
         if serverIndex > #list then serverIndex = 1 end
-        
         local target = list[serverIndex]
-        if target then
-            NameInput.Text = target.Name
-            flingTarget = target.Name
-            SelectBtn.Text = "Выбран: " .. target.DisplayName
-        end
+        if target then NameInput.Text = target.Name flingTarget = target.Name SelectBtn.Text = "Выбран: " .. target.DisplayName end
     end)
 
     addButton(OtherPage, "Fling ВЕСЬ СЕРВЕР", function()
-        notify("Запуск тотального Флинга сервера...")
+        notify("Уничтожение сервера запущено...")
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                executeFling(p.Character)
-                task.wait(0.2)
+                executeFling(p.Character) task.wait(0.1)
             end
         end
-        notify("Атака на сервер завершена!")
     end)
 
-
     ---------------------------------------------------------
-    -- ОКНО АВТОРИЗАЦИИ (КЛЮЧ)
+    -- ОКНО АВТОРИЗАЦИИ
     ---------------------------------------------------------
     local KeyFrame = Instance.new("Frame")
     KeyFrame.Size = UDim2.new(0, 320, 0, 200)
@@ -549,8 +574,6 @@ local function safeLoad()
     InputBox.Text = ""
     InputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     InputBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-    InputBox.Font = Enum.Font.SourceSans
-    InputBox.TextSize = 15
     InputBox.Parent = KeyFrame
     round(InputBox, 6)
 
@@ -558,8 +581,6 @@ local function safeLoad()
     Submit.Size = UDim2.new(0, 120, 0, 38)
     Submit.Position = UDim2.new(0.1, 0, 0.7, 0)
     Submit.Text = "Submit"
-    Submit.Font = Enum.Font.SourceSansBold
-    Submit.TextSize = 15
     Submit.BackgroundColor3 = Color3.fromRGB(90, 120, 255)
     Submit.TextColor3 = Color3.fromRGB(255, 255, 255)
     Submit.Parent = KeyFrame
@@ -569,8 +590,6 @@ local function safeLoad()
     GetKey.Size = UDim2.new(0, 120, 0, 38)
     GetKey.Position = UDim2.new(0.53, 0, 0.7, 0)
     GetKey.Text = "Получить ключ"
-    GetKey.Font = Enum.Font.SourceSansBold
-    GetKey.TextSize = 15
     GetKey.BackgroundColor3 = Color3.fromRGB(65, 65, 70)
     GetKey.TextColor3 = Color3.fromRGB(220, 220, 220)
     GetKey.Parent = KeyFrame
@@ -579,15 +598,14 @@ local function safeLoad()
     GetKey.MouseButton1Click:Connect(function()
         Clipboard("https://discord.com/channels/1524036881057189889/1524036994085425235/1524038305753202810")
         GetKey.Text = "Скопировано!"
-        task.wait(2)
-        GetKey.Text = "Получить ключ"
+        task.wait(2) GetKey.Text = "Получить ключ"
     end)
 
     Submit.MouseButton1Click:Connect(function()
         if InputBox.Text == "ilovepigs" then
             KeyFrame:Destroy()
             MenuFrame.Visible = true
-            notify("Ключ подтвержден. Добро пожаловать!")
+            notify("Ключ принят! Меню открыто.")
         else
             InputBox.Text = ""
             InputBox.PlaceholderText = "Неверный ключ!"
@@ -596,4 +614,4 @@ local function safeLoad()
 end
 
 local success, err = pcall(safeLoad)
-if not success then print("Ошибка: ", err) end
+if not success then print("Ошибка загрузки хаба: ", err) end
