@@ -1,4 +1,4 @@
--- LEMONHUB V3.1 | EMERGENCY BUGFIX
+-- LEMONHUB V3.2 | TOTAL FIX
 local function safeLoad()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
@@ -12,14 +12,14 @@ local function safeLoad()
     local function notify(text)
         pcall(function()
             StarterGui:SetCore("SendNotification", {
-                Title = "LEMONHUB V3.1",
+                Title = "LEMONHUB V3.2",
                 Text = text,
                 Duration = 4
             })
         end)
     end
 
-    notify("Фикс применен! Загрузка...")
+    notify("Скрипт успешно запущен!")
 
     local Clipboard = setclipboard or toclipboard or function() end
     local pGui = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 5)
@@ -83,7 +83,7 @@ local function safeLoad()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(0, 300, 1, 0)
     Title.Position = UDim2.new(0, 15, 0, 0)
-    Title.Text = "MM2 | LEMONHUB V3.1"
+    Title.Text = "MM2 | LEMONHUB V3.2"
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.Font = Enum.Font.SourceSansBold
     Title.TextSize = 18
@@ -308,7 +308,7 @@ local function safeLoad()
     end
 
     ---------------------------------------------------------
-    -- ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ ФУНКЦИОНАЛ
+    -- НАСТРОЙКИ ФУНКЦИОНАЛА
     ---------------------------------------------------------
     
     local function findGun()
@@ -396,19 +396,24 @@ local function safeLoad()
         flying = v
         if flying then
             task.spawn(function()
-                local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-                local hrp = char:WaitForChild("HumanoidRootPart")
+                local char = LocalPlayer.Character
+                if not char then return end
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
                 
-                local bv = Instance.new("BodyVelocity", hrp)
+                local bv = Instance.new("BodyVelocity")
                 bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
                 bv.Velocity = Vector3.new(0,0,0)
+                bv.Parent = hrp
                 
-                local bg = Instance.new("BodyGyro", hrp)
+                local bg = Instance.new("BodyGyro")
                 bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
                 bg.CFrame = hrp.CFrame
+                bg.Parent = hrp
 
-                while flying and char and hrp and bv.Parent do
+                while flying do
                     RunService.RenderStepped:Wait()
+                    if not hrp or not bv or not bg then break end
                     local cam = workspace.CurrentCamera.CFrame
                     local md = Vector3.new()
                     
